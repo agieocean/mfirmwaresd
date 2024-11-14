@@ -19,6 +19,7 @@
 SPIClass SPI1(HSPI);
 #define SDHandler SPI1
 #else
+//SPIClass SPI(HSPI);
 #define SDHandler SPI
 #endif
 

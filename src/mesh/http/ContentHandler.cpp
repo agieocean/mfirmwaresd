@@ -48,6 +48,7 @@ using namespace httpsserver;
 
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <SD.h>
 HTTPClient httpClient;
 
 #define DEST_FS_USES_LITTLEFS
@@ -59,7 +60,7 @@ char contentTypes[][2][32] = {{".txt", "text/plain"},     {".html", "text/html"}
                               {".jpg", "image/jpg"},      {".gz", "application/gzip"},
                               {".gif", "image/gif"},      {".json", "application/json"},
                               {".css", "text/css"},       {".ico", "image/vnd.microsoft.icon"},
-                              {".svg", "image/svg+xml"},  {"", ""}};
+                              {".svg", "image/svg+xml"},  {".wasm", "application/wasm"}};
 
 // const char *certificate = NULL; // change this as needed, leave as is for no TLS check (yolo security)
 
@@ -95,7 +96,12 @@ void registerHandlers(HTTPServer *insecureServer, HTTPSServer *secureServer)
     ResourceNode *nodeJsonFsBrowseStatic = new ResourceNode("/json/fs/browse/static", "GET", &handleFsBrowseStatic);
     ResourceNode *nodeJsonDelete = new ResourceNode("/json/fs/delete/static", "DELETE", &handleFsDeleteStatic);
 
+    #if defined(HAS_SDCARD)
+    ResourceNode *nodeSD = new ResourceNode("/sd/*", "GET", &handleSD);
+    ResourceNode *nodeSD2 = new ResourceNode("/sd/*/*", "GET", &handleSD);
+    #endif
     ResourceNode *nodeRoot = new ResourceNode("/*", "GET", &handleStatic);
+    
 
     // Secure nodes
     secureServer->registerNode(nodeAPIv1ToRadioOptions);
@@ -117,7 +123,11 @@ void registerHandlers(HTTPServer *insecureServer, HTTPSServer *secureServer)
     //    secureServer->registerNode(nodeAdminSettings);
     //    secureServer->registerNode(nodeAdminSettingsApply);
     secureServer->registerNode(nodeRoot); // This has to be last
-
+    #if defined(HAS_SDCARD)
+    secureServer->setDefaultNode(nodeSD);
+    secureServer->registerNode(nodeSD);
+    secureServer->registerNode(nodeSD2);
+    #endif
     // Insecure nodes
     insecureServer->registerNode(nodeAPIv1ToRadioOptions);
     insecureServer->registerNode(nodeAPIv1ToRadio);
@@ -138,6 +148,11 @@ void registerHandlers(HTTPServer *insecureServer, HTTPSServer *secureServer)
     //    insecureServer->registerNode(nodeAdminSettings);
     //    insecureServer->registerNode(nodeAdminSettingsApply);
     insecureServer->registerNode(nodeRoot); // This has to be last
+    #if defined(HAS_SDCARD)
+    insecureServer->setDefaultNode(nodeSD);
+    insecureServer->registerNode(nodeSD);
+    insecureServer->registerNode(nodeSD2);
+    #endif
 }
 
 void handleAPIv1FromRadio(HTTPRequest *req, HTTPResponse *res)
@@ -360,6 +375,54 @@ void handleFsDeleteStatic(HTTPRequest *req, HTTPResponse *res)
     }
 }
 
+#if defined(HAS_SDCARD)
+void handleSD(HTTPRequest *req, HTTPResponse *res)
+{
+    // Get access to the parameters
+    std::string filename = "/static/" + req->getRequestString().substr(4);
+    //std::string filenameGzip = "/static/" + parameter1 + ".gz";
+    if (filename == "/static/") {
+        filename = "/static/index.html";
+    }
+    // Try to open the file
+    //File file;
+    bool has_set_content_type = false;
+    //LOG_WARN(filename.c_str());
+    //LOG_WARN(req->getRequestString().c_str());
+    if (SD.exists(filename.c_str())) {
+        auto handler = SD.open(filename.c_str(), "r");
+        res->setHeader("Content-Length", httpsserver::intToString(handler.size()));
+        // Content-Type is guessed using the definition of the contentTypes-table defined above
+        int cTypeIdx = 0;
+        do {
+            if (filename.rfind(contentTypes[cTypeIdx][0]) != std::string::npos) {
+                res->setHeader("Content-Type", contentTypes[cTypeIdx][1]);
+                has_set_content_type = true;
+                break;
+            }
+            cTypeIdx += 1;
+        } while (strlen(contentTypes[cTypeIdx][0]) > 0);
+        if (!has_set_content_type) {
+            // Set a default content type
+            res->setHeader("Content-Type", "application/octet-stream");
+        }
+        // Read the file and write it to the HTTP response body
+        size_t length = 0;
+        do {
+            char buffer[256];
+            length = handler.read((uint8_t *)buffer, 256);
+            std::string bufferString(buffer, length);
+            res->write((uint8_t *)bufferString.c_str(), bufferString.size());
+            //esp_task_wdt_reset();
+        } while (length > 0);
+        handler.close();
+        return;
+    } else {
+        LOG_WARN("File not available - %s", filename.c_str());
+        }
+}
+#endif
+
 void handleStatic(HTTPRequest *req, HTTPResponse *res)
 {
     // Get access to the parameters
@@ -376,7 +439,7 @@ void handleStatic(HTTPRequest *req, HTTPResponse *res)
         File file;
 
         bool has_set_content_type = false;
-
+        
         if (filename == "/static/") {
             filename = "/static/index.html";
             filenameGzip = "/static/index.html.gz";

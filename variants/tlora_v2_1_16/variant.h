@@ -26,3 +26,17 @@
 #endif
 
 #define LORA_DIO2 32 // Not really used
+
+#define HAS_SDCARD
+#define SPI_MOSI 15
+#define SPI_MISO 2
+#define SPI_SCK 14
+#define SPI_CS 13
+#define SDCARD_CS SPI_CS
+
+//#define SDCARD_USE_SPI1
+
+#define MESHTASTIC_EXCLUDE_GPS true
+#define MESHTASTIC_EXCLUDE_POWER_TELEMETRY true
+#define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR true
+#define MESHTASTIC_EXCLUDE_PAXCOUNTER true
