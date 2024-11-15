@@ -16,11 +16,11 @@
 #include <SPI.h>
 
 #ifndef TLORA_V2_1_16
- #ifdef SDCARD_USE_SPI1
- SPIClass SPI1(HSPI);
- #define SDHandler SPI1
+#ifdef SDCARD_USE_SPI1
+SPIClass SPI1(HSPI);
+#define SDHandler SPI1
 #else
- #define SDHandler SPI
+#define SDHandler SPI
 #endif
 #else
  SPIClass SDHandler = SPIClass(HSPI);
