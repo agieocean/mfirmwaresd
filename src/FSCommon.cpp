@@ -15,15 +15,18 @@
 #include <SD.h>
 #include <SPI.h>
 
-#ifdef SDCARD_USE_SPI1
-SPIClass SPI1(HSPI);
-#define SDHandler SPI1
+#ifndef TLORA_V2_1_16
+ #ifdef SDCARD_USE_SPI1
+ SPIClass SPI1(HSPI);
+ #define SDHandler SPI1
 #else
-//SPIClass SPI(HSPI);
-#define SDHandler SPI
+ #define SDHandler SPI
 #endif
-
+#else
+ SPIClass SDHandler = SPIClass(HSPI);
+#endif
 #endif // HAS_SDCARD
+
 
 #if defined(ARCH_STM32WL)
 
