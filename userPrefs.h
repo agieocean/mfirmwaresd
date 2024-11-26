@@ -9,7 +9,7 @@
 
 // #define USERPREFS_EVENT_MODE 1
 
-// #define USERPREFS_CONFIG_LORA_REGION meshtastic_Config_LoRaConfig_RegionCode_US
+#define USERPREFS_CONFIG_LORA_REGION meshtastic_Config_LoRaConfig_RegionCode_US
 // #define USERPREFS_LORACONFIG_MODEM_PRESET meshtastic_Config_LoRaConfig_ModemPreset_SHORT_FAST
 // #define USERPREFS_LORACONFIG_CHANNEL_NUM 31
 // #define USERPREFS_CONFIG_LORA_IGNORE_MQTT true
@@ -54,7 +54,7 @@
 // #define USERPREFS_CONFIG_OWNER_LONG_NAME "My Long Name"
 // #define USERPREFS_CONFIG_OWNER_SHORT_NAME "MLN"
 
-// #define USERPREFS_SPLASH_TITLE "DEFCONtastic"
+#define USERPREFS_SPLASH_TITLE "piermesh.net"
 // #define icon_width 34
 // #define icon_height 29
 // #define USERPREFS_HAS_SPLASH
